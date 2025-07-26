@@ -1,11 +1,14 @@
 package com.example.upi.controller;
 
+import com.example.upi.dto.TransferRequestDto;
 import com.example.upi.dto.UserRegistrationRequestDto;
 import com.example.upi.entities.UserAccount;
 import com.example.upi.service.UpiService;
 import com.example.upi.service.UserAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,28 +18,15 @@ public class UpiController {
     @Autowired
     private UpiService service;
 
-    private final UserAccountService userAccountService;
-
-    public UpiController(UserAccountService userAccountService) {
-        this.userAccountService = userAccountService;
-    }
-
-    @GetMapping("/balance/{upiId}")
-    public double checkBalance(@PathVariable String upiId) {
-        return service.getBalance(upiId);
+    @GetMapping("/balance")
+    public double checkBalance(@AuthenticationPrincipal UserDetails userDetails) {
+        return service.getBalance(userDetails.getUsername());
     }
 
     @PostMapping("/transfer")
-    public String transfer(@RequestParam String from,
-                           @RequestParam String to,
-                           @RequestParam double amount) {
-        return service.transferMoney(from, to, amount);
+    public String transfer(@RequestBody TransferRequestDto transferRequest,@AuthenticationPrincipal UserDetails userDetails) {
+        return service.transferMoney(userDetails.getUsername(), transferRequest.getToUpi(), transferRequest.getAmount());
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<UserAccount> register(@RequestBody UserRegistrationRequestDto request) {
-        UserAccount registered = userAccountService.registerUser(request);
-        return ResponseEntity.ok(registered);
-    }
 }
 

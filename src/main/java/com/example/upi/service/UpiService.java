@@ -16,12 +16,16 @@ public class UpiService {
     @Autowired
     private TransactionLogRepository txnRepo;
 
-    public String transferMoney(String fromUpi, String toUpi, double amount) {
-        UserAccount sender = userRepo.findByUpiId(fromUpi)
+    public String transferMoney(String username, String toUpi, double amount) {
+        UserAccount sender = userRepo.findByEmail(username)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
 
         UserAccount receiver = userRepo.findByUpiId(toUpi)
                 .orElseThrow(() -> new RuntimeException("Receiver not found"));
+
+        if(toUpi.equals(sender.getUpiId())) {
+            throw new RuntimeException("Cannot transfer money to self");
+        }
 
         String status;
         if (sender.getBalance() >= amount) {
@@ -36,7 +40,7 @@ public class UpiService {
         }
 
         TransactionLog txn = new TransactionLog();
-        txn.setFromUpi(fromUpi);
+        txn.setFromUpi(sender.getUpiId());
         txn.setToUpi(toUpi);
         txn.setAmount(amount);
         txn.setStatus(status);
@@ -45,8 +49,8 @@ public class UpiService {
         return status.equals("SUCCESS") ? "Transfer Successful" : "Insufficient Balance";
     }
 
-    public double getBalance(String upiId) {
-        return userRepo.findByUpiId(upiId)
+    public double getBalance(String email) {
+        return userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"))
                 .getBalance();
     }
